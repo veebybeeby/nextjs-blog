@@ -1,7 +1,5 @@
 import { GraphQLClient } from 'graphql-request'
 import 'cross-fetch/polyfill'
-import remark from 'remark'
-import html from 'remark-html'
 
 const graphcms = new GraphQLClient(process.env.GRAPH_CMS_API, { headers: { authorization: `Bearer ${process.env.GRAPH_CMS_TOKEN}`} })
 
@@ -16,6 +14,9 @@ query ($slug: String) {
       src500: url(transformation: {image: {resize: {width: 500, fit: max}}})
       width
       height
+    }
+    openGraphImage: linkImage {
+      url(transformation: {image: {resize: {width: 1200, height: 1200, fit: crop}}})
     }
   }
 }
@@ -43,6 +44,9 @@ query ($slug: String) {
     title
     content
     publishedAt
+    openGraphImage: linkImage {
+      url(transformation: {image: {resize: {width: 1200, height: 1200, fit: crop}}})
+    }
   }
 }
 `
@@ -50,16 +54,7 @@ query ($slug: String) {
 export async function getPost(slug: string) {
   const { post } = await graphcms.request(postQuery, { slug: slug })
 
-  const processedContent = await remark()
-    .use(html)
-    .process(post.content)
-  const contentHtml = processedContent.toString()
-
-  return ({
-    contentHtml,
-    title: post.title,
-    publishedAt: post.publishedAt,
-  })
+  return post
 }
 
 const allGalleriesQuery = `
@@ -122,10 +117,16 @@ query ($id: ID) {
       socialMedia
       url
     }
+    blogOpenGraphImage: blogImage {
+      url(transformation: {image: {resize: {width: 1200, height: 1200, fit: crop}}})
+    }
     blogImage {
       handle
       width
       height
+    }
+    galleryOpenGraphImage: galleryImage {
+      url(transformation: {image: {resize: {width: 1200, height: 1200, fit: crop}}})
     }
     galleryImage {
       handle
